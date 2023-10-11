@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>List File</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <section class="topnav">
+    <div class="tabs-container">
+      <a class="tab" href="/">Wifi Config</a>
+      <a class="tab" href="/ota">Flash MCU</a>
+      <a class="tab" href="/about">About</a>
+      <span class="tab-slider slider-ota"></span>
+    </div>
+  </section>
+  <div class="content">
+    <section class="card card-list ">
+      <table>
+        <b class="back">
+          <p>
+            FILE LIST SPIFFS
+          </p>
+        </b>
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Size</th>
+            <th scope="col"></th>
+            <th><a href="/ota">Back</a></th>
+          </tr>
+        </thead>
+        <tbody>

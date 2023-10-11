@@ -1,0 +1,5 @@
+.vscode
+build
+debug.log  
+sdkconfig.old
+.devcontainer

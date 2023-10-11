@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>ESP Wi-Fi Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon shortcut" href="favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div id="loader">
+    <div class="loading"></div>
+  </div>
+  <section class="topnav">
+    <div class="tabs-container">
+      <a class="tab" href="/">Wifi Config</a>
+      <a class="tab" href="/ota">Flash MCU</a>
+      <a class="tab" href="/about">About</a>
+      <span class="tab-slider slide-wifi"></span>
+    </div>
+  </section>
+  <section class="wifi-config">
+    <div class="content">
+      <!-- Rounded switch -->
+      <!-- <label class="switch">
+        <input type="checkbox" onclick="changeMode()">
+        <span class="slider round"></span>
+      </label> -->
+      <div class="card-grid">
+        <div class="card-wifi">
+          <form action="/cfgwifi" method="POST" class="form-wifi">
+            <label for="ssid">SSID: </label>
+            <select id="ssid" name="ssid">
+            </select>
+            <p><a onclick="scan_handler()">Scan</a></p>
+            <label for="pass">Password: </label>
+            <input type="text" id="pass" name="pass">
+            <label>IP Address:</label>
+            <label id="ip"></label>
+            <label>Connect: </label>
+            <label id="connected"></label>
+            <input type="submit" value="Submit">
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+<script>
+  var mode = 0; // 0: BOOT, 1: DEBUG
+  changeMode = () => {
+    var load = document.getElementById("loader");
+    load.style.display = "flex";
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = () => {
+      if (xhttp.readyState == 4) {
+        if (xhttp.status == 200) {
+            alert("scc");
+            if (mode == 0) {
+            mode = 1;
+            document.getElementsByClassName("card-grid")[0].style.display = "none";
+          } else {
+            mode = 0;
+            document.getElementsByClassName("card-grid")[0].style.display = "flex";
+          }
+        }else{
+          alert("fail");
+        }
+        load.style.display = "none";
+      }
+    }
+    xhttp.open("GET", "/mode", true);
+    xhttp.send();
+  }
+  scan_handler = () => {
+    var load = document.getElementById("loader");
+    load.style.display = "flex";
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = () => {
+      if (xhttp.readyState == 4) {
+        if (xhttp.status == 200) {
+          var text = xhttp.responseText;
+          var obj = JSON.parse(text);
+          const ssid = document.getElementById("ssid");
+          while (ssid.hasChildNodes()) {
+            ssid.removeChild(ssid.firstChild);
+          }
+          obj.SSID.forEach(element => {
+            if (element != "") {
+              let option = document.createElement("option");
+              option.innerHTML = element;
+              option.value = element;
+              document.getElementById("ssid").appendChild(option);
+            }
+          });
+          load.style.display = "none";
+        }
+      }
+    }
+    xhttp.open("GET", "/scan", true);
+    xhttp.send();
+  }
+  getIP_SSID = () => {
+    var load = document.getElementById("loader");
+    load.style.display = "flex";
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = () => {
+      if (xhttp.readyState == 4) {
+        if (xhttp.status == 200) {
+          let arr = xhttp.responseText.split("?", 2);
+          document.getElementById("ip").innerHTML = arr[0];
+          document.getElementById("connected").innerHTML = arr[1];
+          load.style.display = "none";
+        }
+      }
+    }
+    xhttp.open("GET", "/getIpSsid", true);
+    xhttp.send();
+  }
+  // scan_handler();
+  getIP_SSID();
+</script>
+
+</html>
