@@ -547,7 +547,7 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
                 httpd_resp_sendstr(req, "WRONG MODE");
             }
             else
-            {`
+            {
                 if (!strcmp(para, "?erase1"))
                 {
                     Boot1();
