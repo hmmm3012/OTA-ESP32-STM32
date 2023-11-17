@@ -13,13 +13,13 @@
 #include "esp_vfs.h"
 #include "esp_spiffs.h"
 // HTTP server
-#include "app.h"
+#include "app_internal.h"
 #include "esp_http_server.h"
 // OTA
 #include "driver/uart.h"
 #include "stm32ota.h"
-#include "GPIO_OTA.h"
-#include "STA_AP.h"
+#include "gpio.h"
+#include "wifi.h"
 
 /* Max length a file path can have on storage */
 #define FILE_PATH_MAX (ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN)
@@ -62,12 +62,11 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req);
 static const char *get_path_from_uri(char *dest, const char *base_path, const char *uri, size_t destsize);
 static esp_err_t upload_post_handler(httpd_req_t *req);
 static esp_err_t delete_post_handler(httpd_req_t *req);
-static esp_err_t changeMode_handler(httpd_req_t *req);
 /* Function to start the file server */
 esp_err_t start_file_server(System_DataTypedef *Para_system_data)
 {
     system_data_FS = Para_system_data;
-    RunBoth();
+    gpio_run_both();
     Get_SSID(system_data_FS->ssid);
     Get_IP(system_data_FS->ip);
     httpd_handle_t server = NULL;
@@ -165,19 +164,13 @@ esp_err_t start_file_server(System_DataTypedef *Para_system_data)
         .uri = "/scan",
         .method = HTTP_GET,
         .handler = scan_handler,
-        .user_ctx = NULL // Pass server data as context
+        .user_ctx = NULL 
     };
     httpd_uri_t cfgWifi_handle = {
         .uri = "/cfgwifi",
         .method = HTTP_POST,
         .handler = cfgWifi_handler,
-        .user_ctx = NULL, // Pass server data as context
-    };
-    httpd_uri_t changeMode_handle = {
-        .uri = "/mode",
-        .method = HTTP_GET,
-        .handler = changeMode_handler,
-        .user_ctx = NULL, // Pass server data as context
+        .user_ctx = NULL, 
     };
     // Register URI handler
     httpd_register_uri_handler(server, &file_download);
@@ -190,35 +183,8 @@ esp_err_t start_file_server(System_DataTypedef *Para_system_data)
     httpd_register_uri_handler(server, &favicon_handle);
     httpd_register_uri_handler(server, &scan_handle);
     httpd_register_uri_handler(server, &cfgWifi_handle);
-    httpd_register_uri_handler(server, &changeMode_handle);
     httpd_register_uri_handler(server, &wifi_manager);
 
-    return ESP_OK;
-}
-
-// function definition
-static esp_err_t changeMode_handler(httpd_req_t *req)
-{
-    // Change state Boot -> Debug or Debug -> Boot
-    uint8_t *f_oled = system_data_FS->sys_state;
-    uint8_t parity = UART_PARITY_EVEN;
-    if (*f_oled == 3)
-    {
-        parity = UART_PARITY_DISABLE;
-        *f_oled = 2;
-    }
-    else
-    {
-        *f_oled = 3;
-    }
-    if (uart_set_parity(UART, parity) == ESP_OK)
-    {
-        httpd_resp_sendstr(req, "Change mode done");
-    }
-    else
-    {
-        httpd_resp_send_500(req);
-    }
     return ESP_OK;
 }
 static esp_err_t cfgWifi_handler(httpd_req_t *req)
@@ -256,10 +222,7 @@ static esp_err_t cfgWifi_handler(httpd_req_t *req)
     }
     Get_SSID(system_data_FS->ssid);
     Get_IP(system_data_FS->ip);
-    system_data_FS->sys_state |= (MODE_BOOT | MODE_CHANGE);
-    // Get_SSID(((System_DataTypedef *)req->user_ctx)->ssid);
-    // Get_IP(((System_DataTypedef *)req->user_ctx)->ip);
-    // ((System_DataTypedef *)req->user_ctx)->sys_state = 3;
+    system_set_sys_state(system_data_FS, MODE_BOOT | MODE_CHANGE);
     free(buf);
     free(ssid);
     free(pass);
@@ -274,15 +237,11 @@ static esp_err_t scan_handler(httpd_req_t *req)
 }
 static esp_err_t reload_json(httpd_req_t *req)
 {
-    // size_t *total = &((System_DataTypedef *)req->user_ctx)->total;
-    // size_t *used = &((System_DataTypedef *)req->user_ctx)->used;
-    // bool STATE1 = ((System_DataTypedef *)req->user_ctx)->STATE1;
-    // bool STATE2 = ((System_DataTypedef *)req->user_ctx)->STATE2;
-    size_t *total = &system_data_FS->total;
-    size_t *used = &system_data_FS->used;
-    bool STATE1 = system_data_FS->STATE1;
-    bool STATE2 = system_data_FS->STATE2;
-    esp_err_t ret = esp_spiffs_info(NULL, total, used);
+    size_t TOTAL = system_get_spi_total(system_data_FS);
+    size_t USED = system_get_spi_used(system_data_FS);
+    bool MCU1_STATE = system_get_mcu1_state(system_data_FS);
+    bool MCU2_STATE = system_get_mcu2_state(system_data_FS);
+    esp_err_t ret = esp_spiffs_info(NULL, &TOTAL, &USED);
     if (ret != ESP_OK)
     {
 #if DEBUG
@@ -294,7 +253,7 @@ static esp_err_t reload_json(httpd_req_t *req)
 #if DEBUG
     ESP_LOGI(TAG, "GET SPI INFO DONE");
 #endif
-    sprintf(str, "{\"spistorage\":\"%d\",\"spiused\":\"%d\",\"state1\":\"%s\",\"state2\":\"%s\",\"files\":[", *total, *used, STATE1 == 1 ? "running" : "off", STATE2 == 1 ? "running" : "off");
+    sprintf(str, "{\"spistorage\":\"%d\",\"spiused\":\"%d\",\"state1\":\"%s\",\"state2\":\"%s\",\"files\":[", TOTAL, USED, MCU1_STATE == 1 ? "running" : "off", MCU2_STATE == 1 ? "running" : "off");
     const char *dirpath = "/data/";
     char entrypath[FILE_PATH_MAX];
     char entrysize[16];
@@ -330,10 +289,10 @@ static esp_err_t reload_json(httpd_req_t *req)
 }
 static esp_err_t download_mcu_handler(httpd_req_t *req)
 {
-    // #if DEBUG
-    //     ESP_LOGI("MODE", "%d", system_data_FS->sys_state);
-    // #endif
-    if ((system_data_FS->sys_state & 0b1) == 1)
+#if DEBUG
+    ESP_LOGI("MODE", "%d", system_data_FS->sys_state);
+#endif
+    if (system_is_debug_mode(system_data_FS) == 1)
     {
         httpd_resp_set_type(req, "text/plain");
         httpd_resp_sendstr(req, "WRONG MODE");
@@ -358,11 +317,11 @@ static esp_err_t download_mcu_handler(httpd_req_t *req)
 #endif
         if (req->uri[9] == '2')
         {
-            Boot2();
+            gpio_boot_mcu2();
         }
         else
         {
-            Boot1();
+            gpio_boot_mcu1();
         }
         if (initSTM32())
         {
@@ -477,9 +436,6 @@ static esp_err_t style_handler(httpd_req_t *req)
 }
 static esp_err_t ota_manager_handler(httpd_req_t *req)
 {
-    bool *STATE1 = &system_data_FS->STATE1;
-    bool *STATE2 = &system_data_FS->STATE2;
-    uint8_t *fscreen = &system_data_FS->sys_state;
     const char *para = strchr(req->uri, '?');
     if (para)
     {
@@ -497,21 +453,18 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
     }
     else if (!strcmp(para, "?reload"))
     {
+        system_set_sys_state(system_data_FS,MODE_CHANGE|MODE_BOOT);
         reload_json(req);
         return ESP_OK;
     }
     else
     {
-#if DEBUG
-        ESP_LOGI("MODE", "%d", system_data_FS->sys_state);
-#endif
         httpd_resp_set_type(req, "text/plain");
-        if (!strcmp(para, "?runboth"))
+        if (strcmp(para, "?runboth") == 0)
         {
-            RunBoth();
-            *STATE1 = 1;
-            *STATE2 = 1;
-            *fscreen = MODE_CHANGE;
+            gpio_run_both();
+            system_update_mcu_state(system_data_FS, 1, 1);
+            system_set_sys_state(system_data_FS, MODE_BOOT | MODE_CHANGE);
             httpd_resp_sendstr(req, "RUN BOTH");
 #if DEBUG
             ESP_LOGI(TAG, "RUN BOTH");
@@ -519,42 +472,40 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
         }
         else if (!strcmp(para, "?run1"))
         {
-            Run1();
-            *STATE1 = 1;
-            *STATE2 = 0;
-            *fscreen = MODE_CHANGE;
+            gpio_run_mcu1();
+            system_update_mcu_state(system_data_FS, 1, 0);
+            system_set_sys_state(system_data_FS, MODE_BOOT | MODE_CHANGE);
             httpd_resp_sendstr(req, "RUN 1");
 #if DEBUG
             ESP_LOGI(TAG, "Only RUN 1");
 #endif
         }
-        else if (!strcmp(para, "?run2"))
+        else if (strcmp(para, "?run2") == 0)
         {
-            Run2();
-            *STATE1 = 0;
-            *STATE2 = 1;
-            *fscreen = MODE_CHANGE;
+            gpio_run_mcu2();
+            system_update_mcu_state(system_data_FS, 0, 1);
+            system_set_sys_state(system_data_FS, MODE_BOOT | MODE_CHANGE);
             httpd_resp_sendstr(req, "RUN 2");
 #if DEBUG
             ESP_LOGI(TAG, "Only RUN 2");
 #endif
         }
-        else // ERASE MCU
+        else if (strcmp(para,"?erase") && para[1] != 'd')
         {
-            if ((system_data_FS->sys_state & 0b1) == 1)
+            if (system_is_debug_mode(system_data_FS) == 1)
             {
                 httpd_resp_set_type(req, "text/plain");
                 httpd_resp_sendstr(req, "WRONG MODE");
             }
             else
             {
-                if (!strcmp(para, "?erase1"))
+                if (strcmp(para, "?erase1")==0)
                 {
-                    Boot1();
+                    gpio_boot_mcu1();
                 }
                 else
                 {
-                    Boot2();
+                    gpio_boot_mcu2();    
                 }
 #if DEBUG
                 if (initSTM32() == 1)
@@ -580,6 +531,21 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
                     httpd_resp_send_500(req);
                 }
             }
+        }
+        
+        // Debug mode
+        // else if (strcmp(para, "?debug"))
+        else
+        {
+            system_set_sys_state(system_data_FS, MODE_DEBUG | MODE_CHANGE);
+            if(strcmp(para,"?debug1") == 0){
+                system_update_mcu_state(system_data_FS, 1, 0);
+                gpio_run_mcu1();
+            }else{
+                system_update_mcu_state(system_data_FS, 0, 1);
+                gpio_run_mcu2();
+            }
+            httpd_resp_sendstr(req, "DEBUG");
         }
     }
     return ESP_OK;

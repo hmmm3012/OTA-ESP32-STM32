@@ -1,5 +1,5 @@
 // File Server
-#include "app.h"
+#include "app_internal.h"
 // Freertos
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -8,42 +8,37 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 // Wifi
-#include "STA_AP.h"
+#include "wifi.h"
 // Oled
-#include "I2C_OLED.h"
+#include "oled.h"
 // GPIO
-#include "GPIO_OTA.h"
+#include "gpio.h"
 // CAN
-#include "CAN_NODE.h"
+#include "can.h"
 // UART
-#include "UART_NODE.h"
-// Global
-// void printServerData();
-System_DataTypedef *system_data = NULL;
-void initSystem();
+#include "uart.h"
+// Global variable
+System_DataTypedef *system_DATA = NULL;
 
 static void print_Screen(void *pvParameters)
 {
-    uint8_t fScreen;
     while (1)
     {
-        fScreen = system_data->sys_state;
-        if ((fScreen & 0b10) != 0)
+        if (system_is_changed(system_DATA))
         {
-            // Flashing screen
-            if (fScreen == 2)
+            // system info screen
+            if (!system_is_debug_mode(system_DATA))
             {
-                print_OTA_Screen(system_data->ssid, system_data->ip, system_data->STATE1, system_data->STATE2);
-                system_data->sys_state &= 0b01;
+                oled_system_info(system_DATA->name,system_DATA->ssid, system_DATA->ip, system_DATA->mcu1_state, system_DATA->mcu2_state);
+                system_set_sys_state(system_DATA, MODE_NOCHANGE|MODE_BOOT);
             }
-            // CAN screen
-            else if (fScreen == 3)
+            // debug UART and CAN screen
+            else 
             {
-                print_CAN_Screen();
-                memset(system_data->CAN1_Data, 0, sizeof(uint8_t) * 8);
-                memset(system_data->CAN2_Data, 0, sizeof(uint8_t) * 8);
-                memset(system_data->uart_buffer, 0, sizeof(uint8_t) * UART_RX_BUFFER_SIZE);
-                system_data->sys_state &= 0b01;
+                oled_debug(system_DATA->CAN1_Data, system_DATA->uart_buffer);
+                memset(system_DATA->CAN1_Data, 0, sizeof(uint8_t) * 8);
+                memset(system_DATA->uart_buffer, 0, sizeof(uint8_t) * UART_RX_BUFFER_SIZE);
+                system_set_sys_state(system_DATA, MODE_NOCHANGE|MODE_DEBUG);
             }
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -53,29 +48,19 @@ static void print_Screen(void *pvParameters)
 
 void app_main(void)
 {
-    initSystem();
+    system_DATA = system_init();
     /* Init and configure GPIO pin used in system*/
-    GPIO_OTA_Init(&system_data->sys_state);
+    gpio_init(system_DATA);
     /* Uart init*/
-    initUart(system_data->uart_buffer, &system_data->sys_state);
+    uart_init(system_DATA);
     /* Init OLED*/
-    SH1106_init(system_data);
+    oled_init(system_DATA);
     /*Init and start wifi as STATION and AP mode*/
-    Sta_AP_Start();
+    wifi_init();
     // Start file server and mount storage
-    ESP_ERROR_CHECK(mount_storage(system_data));
-    ESP_ERROR_CHECK(start_file_server(system_data));
+    ESP_ERROR_CHECK(mount_storage(system_DATA));
+    ESP_ERROR_CHECK(start_file_server(system_DATA));
     /*Init and start CAN bus*/
-    // CAN_Init(system_data);
-    xTaskCreate(print_Screen, "print_Screen", 2048, NULL, 15, NULL);
-}
-
-void initSystem()
-{
-    /*Init system data*/
-    system_data = calloc(1, sizeof(System_DataTypedef));
-    system_data->STATE1 = 1; // MCU 1 run
-    system_data->STATE2 = 1; // MCU 2 run
-    system_data->sys_state = 2; // Boot mode, change : 0011
-    strlcpy(system_data->base_path, "/data", sizeof(system_data->base_path));
+    can_init(system_DATA);
+    xTaskCreate(print_Screen, "print_Screen", 1024*3, NULL, 15, NULL);
 }

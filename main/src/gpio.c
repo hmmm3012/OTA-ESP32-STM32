@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "driver/gpio.h"
-#include "GPIO_OTA.h"
+#include "gpio.h"
 #include "driver/uart.h"
 
-#include "app.h"
+#include "app_internal.h"
 #if DEBUG
 #include "esp_log.h"
 #endif
@@ -25,21 +25,21 @@
 #define UART_PAD (1ULL << TX_PAD | 1ULL << RX_PAD)
 
 static const char *TAG = "GPIO";
-uint8_t *f_oled = 0;
+System_DataTypedef* system_DATA_GPIO;
 
 static IRAM_ATTR void BTN1_handler()
 {
     uart_set_parity(UART_NUM_1, UART_PARITY_EVEN);
-    *f_oled = 0b10; // 0010
+    system_set_sys_state(system_DATA_GPIO, MODE_BOOT | MODE_CHANGE);
 }
 static IRAM_ATTR void BTN2_handler()
 {
     uart_set_parity(UART_NUM_1, UART_PARITY_DISABLE);
-    *f_oled = 0b11; // 0011
+    system_set_sys_state(system_DATA_GPIO, MODE_DEBUG | MODE_CHANGE);
 }
-void GPIO_OTA_Init(uint8_t *sys_state)
+void gpio_init(void *PARA_system_DATA)
 {
-    f_oled = sys_state;
+    system_DATA_GPIO = (System_DataTypedef *) PARA_system_DATA;
     // Configure GPIO for OTA
     gpio_config_t OTA_conf = {};
     OTA_conf.mode = GPIO_MODE_OUTPUT;
@@ -74,7 +74,8 @@ void GPIO_OTA_Init(uint8_t *sys_state)
     gpio_isr_handler_add(BUTTON_1, BTN1_handler, NULL);
     gpio_isr_handler_add(BUTTON_2, BTN2_handler, NULL);
 }
-void RunBoth()
+
+void gpio_run_both()
 {
     gpio_set_level(BOOT1, 0);
     gpio_set_level(BOOT2, 0);
@@ -89,25 +90,28 @@ void RunBoth()
     ESP_LOGI(TAG, "MCU 2 : RUN");
 #endif
 }
-void Run1()
+
+void gpio_run_mcu1()
 {
-    RunBoth();
+    gpio_run_both();
     gpio_set_level(RESET2, 0);
 #if DEBUG
     ESP_LOGI(TAG, "MCU 1 : RUN");
     ESP_LOGI(TAG, "MCU 2 : OFF");
 #endif
 }
-void Run2()
+
+void gpio_run_mcu2()
 {
-    RunBoth();
+    gpio_run_both();
     gpio_set_level(RESET1, 0);
 #if DEBUG
     ESP_LOGI(TAG, "MCU 1 : OFF");
     ESP_LOGI(TAG, "MCU 2 : RUN");
 #endif
 }
-void Boot1()
+
+void gpio_boot_mcu1()
 {
     gpio_set_level(BOOT1, 1);
     gpio_set_level(RESET2, 0);
@@ -116,7 +120,8 @@ void Boot1()
     gpio_set_level(RESET1, 1);
     vTaskDelay(100 / portTICK_PERIOD_MS);
 }
-void Boot2()
+
+void gpio_boot_mcu2()
 {
     gpio_set_level(BOOT2, 1);
     gpio_set_level(RESET1, 0);

@@ -77,11 +77,8 @@ void i2c_master_init();
 /*
     - Init OLED
 */
-void SH1106_init(void *System_Data);
-
-void task_sh1106_display_pattern(void *ignore);
-void task_sh1106_display_clear(void *ignore);
-void task_sh1106_contrast(void *ignore);
-void task_sh1106_display_text(const void *arg_text);
-void print_OTA_Screen(const char* ssid,const char* ip,const bool state1,const bool state2);
-void print_CAN_Screen();
+void sh1106_init(void );
+void sh1106_display_pattern(void *ignore);
+void sh1106_display_clear(void *ignore);
+void sh1106_contrast(void *ignore);
+void sh1106_display_text(const void *arg_text);

@@ -7,18 +7,18 @@
 #include "esp_log.h"
 #include "driver/uart.h"
 
-#include "UART_NODE.h"
-#include "app.h"
+#include "uart.h"
+#include "app_internal.h"
 
 #define BUF_SIZE (1024)
 #define RD_BUF_SIZE (BUF_SIZE)
 #define TXD_PIN (17)
 #define RXD_PIN (16)
+
 static const char *TAG = "UART";
 static QueueHandle_t uart0_queue;
+System_DataTypedef* system_DATA_UART ;
 
-uint8_t *data_rx;
-uint8_t *Uart_fOled;
 static void uart_event_task(void *pvParameters)
 {
     uart_event_t event;
@@ -27,20 +27,17 @@ static void uart_event_task(void *pvParameters)
         // Waiting for UART event.
         if (xQueueReceive(uart0_queue, (void *)&event, (TickType_t)portMAX_DELAY))
         {
-            if ((*Uart_fOled & 0b1) == 1)
+            if (system_is_debug_mode(system_DATA_UART))
             {
-                ESP_LOGI("loop", "uart rcv loop");
-                bzero(data_rx, RD_BUF_SIZE);
-                // ESP_LOGI(TAG, "uart[%d] event:", UART);
+                // bzero(system_DATA_UART->uart_buffer, RD_BUF_SIZE);
                 switch (event.type)
                 {
                 // Event of UART receving data
                 case UART_DATA:
-                    uart_read_bytes(UART, data_rx, event.size, portMAX_DELAY);
-                    // ESP_LOGI(TAG, "[UART DATA]: %d", event.size);
-                    // ESP_LOGI(TAG, "[READ DATA]: %x", *data_rx);
-                    uart_flush(UART);
-                    *Uart_fOled |= 0b10;
+                    uart_read_bytes(UART, system_DATA_UART->uart_buffer, event.size, portMAX_DELAY);
+                    ESP_LOGI(TAG, "[READ DATA]: %s", system_DATA_UART->uart_buffer);
+                    // uart_flush(UART);
+                    system_set_sys_state(system_DATA_UART,MODE_CHANGE|MODE_DEBUG);
                     break;
                 // Event of HW FIFO overflow detected
                 case UART_FIFO_OVF:
@@ -61,7 +58,7 @@ static void uart_event_task(void *pvParameters)
                     break;
                 // Event of UART RX break detected
                 case UART_BREAK:
-                    *Uart_fOled = 5;
+                    system_set_sys_state(system_DATA_UART,MODE_CHANGE|MODE_DEBUG);
                     ESP_LOGI(TAG, "uart rx break");
                     break;
                 // Event of UART parity check error
@@ -81,10 +78,9 @@ static void uart_event_task(void *pvParameters)
     }
     vTaskDelete(NULL);
 }
-void initUart(uint8_t *read_buf, uint8_t *foled)
+void uart_init(void* system_data)
 {
-    data_rx = read_buf;
-    Uart_fOled = foled;
+    system_DATA_UART = (System_DataTypedef*) system_data;
     esp_log_level_set(TAG, ESP_LOG_INFO);
     /* Configure parameters of an UART driver,
      * communication pins and install the driver */
@@ -105,5 +101,4 @@ void initUart(uint8_t *read_buf, uint8_t *foled)
     // Create a task to handler UART event from ISR
     TaskHandle_t uart_rx = NULL;
     xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, &uart_rx);
-    // vTaskDelete(uart_rx);
 }

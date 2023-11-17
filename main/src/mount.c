@@ -1,4 +1,4 @@
-#include "app.h"
+#include "app_internal.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,7 +18,7 @@ esp_err_t mount_storage(System_DataTypedef *Para_system_data)
 {
 #if DEBUG
     ESP_LOGI(TAG, "Initializing SPIFFS");
-    #endif
+#endif
     esp_vfs_spiffs_conf_t conf = {
         .base_path = Para_system_data->base_path,
         .partition_label = NULL,

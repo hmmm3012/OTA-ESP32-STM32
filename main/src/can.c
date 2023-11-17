@@ -9,8 +9,8 @@
 #include "esp_log.h"
 
 #include "driver/twai.h"
-#include "app.h"
-#include "CAN_NODE.h"
+#include "app_internal.h"
+#include "can.h"
 
 static const twai_message_t start_message = {.identifier = ID_MASTER_START_CMD, .data_length_code = 8, .data = {'h','e','l','l','o','a','a','a'}};
 
@@ -63,12 +63,13 @@ static void twai_transmit_task(void *arg)
     }
 }
 
-void CAN_Init(void *system_context)
+void can_init(void *system_context)
 {
     System_Data = (System_DataTypedef *) system_context;
     const twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     const twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     const twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(TX_GPIO_NUM, RX_GPIO_NUM, TWAI_MODE_NORMAL);
+    // Install TWAI driver    
     ESP_ERROR_CHECK(twai_driver_install(&g_config, &t_config, &f_config));
     ESP_LOGI(TAG, "Driver installed");
     // Create tasks, queues, and semaphores
@@ -81,8 +82,6 @@ void CAN_Init(void *system_context)
     ESP_LOGI(TAG, "Driver started");
     rx_task_action_t rx_action = RX_RECEIVE_DATA;
     tx_task_action_t tx_action = TX_SEND_START_CMD;
-    // xQueueSend(tx_task_queue, &tx_action, portMAX_DELAY);
     xQueueSend(rx_task_queue, &rx_action, portMAX_DELAY);
     // Uninstall TWAI driver
-    // ESP_ERROR_CHECK(twai_driver_uninstall());
 }

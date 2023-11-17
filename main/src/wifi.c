@@ -17,8 +17,8 @@
 #endif
 #include "lwip/err.h"
 #include "lwip/sys.h"
-#include "STA_AP.h"
-#include "app.h"
+#include "wifi.h"
+#include "app_internal.h"
 
 #if DEBUG
 #include "esp_log.h"
@@ -26,6 +26,7 @@ static const char *TAG_AP = "WiFi SoftAP";
 static const char *TAG_STA = "WiFi Sta";
 static const char *TAG_Scan = "WiFi Sta";
 #endif
+
 static int s_retry_num = 0;
 static esp_netif_t *esp_netif_sta;
 static esp_netif_t *esp_ap_cfg;
@@ -83,18 +84,18 @@ void wifi_init_softap(void)
     esp_ap_cfg = esp_netif_create_default_wifi_ap();
     wifi_config_t wifi_ap_config = {
         .ap = {
-            .ssid = EXAMPLE_ESP_WIFI_AP_SSID,
-            .ssid_len = strlen(EXAMPLE_ESP_WIFI_AP_SSID),
-            .channel = EXAMPLE_ESP_WIFI_CHANNEL,
-            .password = EXAMPLE_ESP_WIFI_AP_PASSWD,
-            .max_connection = EXAMPLE_MAX_STA_CONN,
+            .ssid = ESP_WIFI_AP_SSID,
+            .ssid_len = strlen(ESP_WIFI_AP_SSID),
+            .channel = ESP_WIFI_CHANNEL,
+            .password = ESP_WIFI_AP_PASSWD,
+            .max_connection = MAX_STA_CONN,
             .authmode = WIFI_AUTH_WPA2_PSK,
             .pmf_cfg = {
                 .required = false,
             },
         },
     };
-    if (strlen(EXAMPLE_ESP_WIFI_AP_PASSWD) == 0)
+    if (strlen(ESP_WIFI_AP_PASSWD) == 0)
     {
         wifi_ap_config.ap.authmode = WIFI_AUTH_OPEN;
     }
@@ -102,7 +103,7 @@ void wifi_init_softap(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_ap_config));
 #if DEBUG
     ESP_LOGI(TAG_AP, "wifi_init_softap finished. SSID:%s password:%s channel:%d",
-             EXAMPLE_ESP_WIFI_AP_SSID, EXAMPLE_ESP_WIFI_AP_PASSWD, EXAMPLE_ESP_WIFI_CHANNEL);
+             ESP_WIFI_AP_SSID, ESP_WIFI_AP_PASSWD, ESP_WIFI_CHANNEL);
 #endif
 
     //   return esp_netif_ap;
@@ -122,7 +123,7 @@ void wifi_init_sta(void)
 #endif
 }
 
-void Sta_AP_Start(void)
+void wifi_init(void)
 {
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -207,13 +208,13 @@ bool Connect_New_Wifi(const char nssid[], const char npass[])
     {
 #if DEBUG
         ESP_LOGI(TAG_STA, "Disconnect from AP successed");
-        #endif
+#endif
     }
     else
     {
 #if DEBUG
         ESP_LOGI(TAG_STA, "Not connect yet boy");
-        #endif
+#endif
     }
     wifi_config_t wifi_sta_config = {
         .sta = {
@@ -221,7 +222,7 @@ bool Connect_New_Wifi(const char nssid[], const char npass[])
             .ssid = "",
             .password = "",
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
-            .failure_retry_cnt = EXAMPLE_ESP_MAXIMUM_RETRY,
+            .failure_retry_cnt = ESP_MAXIMUM_RETRY,
             .threshold.authmode = WIFI_AUTH_WPA_PSK,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
         },

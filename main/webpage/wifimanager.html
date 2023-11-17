@@ -22,11 +22,6 @@
   </section>
   <section class="wifi-config">
     <div class="content">
-      <!-- Rounded switch -->
-      <!-- <label class="switch">
-        <input type="checkbox" onclick="changeMode()">
-        <span class="slider round"></span>
-      </label> -->
       <div class="card-grid">
         <div class="card-wifi">
           <form action="/cfgwifi" method="POST" class="form-wifi">
@@ -118,7 +113,6 @@
     xhttp.open("GET", "/getIpSsid", true);
     xhttp.send();
   }
-  // scan_handler();
   getIP_SSID();
 </script>
 

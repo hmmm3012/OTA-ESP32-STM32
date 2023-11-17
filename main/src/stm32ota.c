@@ -3,7 +3,7 @@
 #include "driver/gpio.h"
 #include "string.h"
 #include "stm32ota.h"
-#include "app.h"
+#include "app_internal.h"
 
 char *STM32_CHIPNAME[2] = {
     "Unknown Chip",

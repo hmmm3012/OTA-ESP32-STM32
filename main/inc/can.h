@@ -32,4 +32,4 @@ typedef enum {
     RX_TASK_EXIT,
 } rx_task_action_t;
 
-void CAN_Init(void* system_context);
+void can_init(void* system_context);

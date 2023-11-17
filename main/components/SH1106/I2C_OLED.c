@@ -15,7 +15,7 @@
 
 #define tag "SH1106"
 
-#include "app.h"
+#include "app_internal.h"
 
 System_DataTypedef *System_Data_Global;
 void i2c_master_init()
@@ -41,9 +41,8 @@ void sh1106_set_display_start_line(i2c_cmd_handle_t cmd, uint_fast8_t start_line
 	}
 }
 
-void SH1106_init(void *System_Data)
+void sh1106_init(void)
 {
-	System_Data_Global = (System_DataTypedef *)System_Data;
 	i2c_master_init();
 	esp_err_t espRc;
 
@@ -82,7 +81,7 @@ void SH1106_init(void *System_Data)
 	i2c_cmd_link_delete(cmd);
 }
 
-void task_sh1106_display_pattern(void *ignore)
+void sh1106_display_pattern(void *ignore)
 {
 	i2c_cmd_handle_t cmd;
 
@@ -104,7 +103,7 @@ void task_sh1106_display_pattern(void *ignore)
 	}
 }
 
-void task_sh1106_display_clear(void *ignore)
+void sh1106_display_clear(void *ignore)
 {
 	i2c_cmd_handle_t cmd;
 
@@ -136,7 +135,7 @@ void task_sh1106_display_clear(void *ignore)
 	i2c_cmd_link_delete(cmd);
 }
 
-void task_sh1106_contrast(void *ignore)
+void sh1106_contrast(void *ignore)
 {
 	i2c_cmd_handle_t cmd;
 
@@ -168,7 +167,7 @@ void task_sh1106_contrast(void *ignore)
 	vTaskDelete(NULL);
 }
 
-void task_sh1106_display_text(const void *arg_text)
+void sh1106_display_text(const void *arg_text)
 {
 	char *text = (char *)arg_text;
 	uint8_t text_len = strlen(text);
@@ -221,58 +220,4 @@ void task_sh1106_display_text(const void *arg_text)
 			i2c_cmd_link_delete(cmd);
 		}
 	}
-}
-
-void print_OTA_Screen(const char *ssid, const char *ip, const bool state1, const bool state2)
-{
-	char buf[500] = "";
-	task_sh1106_display_clear(NULL);
-	sprintf(buf, "SSID:\n\t%s\nIP:\n\t%s\nMCU 1:\n\t\t\t\t\t\t%s\nMCU 2:\n\t\t\t\t\t\t%s",
-			ssid == NULL ? "Not connected" : ssid,
-			ip == NULL ? "Not connected" : ip,
-			state1 == 1 ? "RUN" : "OFF",
-			state2 == 1 ? "RUN" : "OFF");
-	task_sh1106_display_text(buf);
-}
-
-void print_CAN_Screen()
-{
-	task_sh1106_display_clear(NULL);
-	// uint8_t *Can1_data = System_Data_Global->CAN1_Data;
-	// uint8_t *Can2_data = System_Data_Global->CAN2_Data;
-	// uint8_t *Uart1_data = System_Data_Global->Uart1_Data;
-	// uint8_t *Uart2_data = System_Data_Global->Uart2_Data;
-	uint8_t Uart_data[32];
-	memcpy(Uart_data, System_Data_Global->uart_buffer, 32);
-	// char Can1[32];
-	// char Can2[32];
-	char Uart1[112];
-	char Screen[128];
-	char *nodata = "No data";
-	// if (Can1_data[0] != 0)
-	// {
-	// 	sprintf(Can1, "CAN 1:%x %x %x %x\n%x %x %x %x\n", Can1_data[0], Can1_data[1], Can1_data[2], Can1_data[3], Can1_data[4], Can1_data[5], Can1_data[6], Can1_data[7]);
-	// }
-	// else
-	// {
-	// 	sprintf(Can1, "CAN 1: %s\n", nodata);
-	// }
-	// if (Can1_data[0] != 0)
-	// {
-	// 	sprintf(Can2, "CAN 2:%x %x %x %x\n%x %x %x %x\n", Can2_data[0], Can2_data[1], Can2_data[2], Can2_data[3], Can2_data[4], Can2_data[5], Can2_data[6], Can2_data[7]);
-	// }
-	// else
-	// {
-	// 	sprintf(Can2, "CAN 2: %s\n", nodata);
-	// }
-	if (Uart_data[0] != 0)
-	{
-		sprintf(Uart1, "Uart:%s", Uart_data);
-	}
-	else
-	{
-		sprintf(Uart1, "Uart:%s\n", nodata);
-	}
-	sprintf(Screen, "%s", Uart1);
-	task_sh1106_display_text(Screen);
 }

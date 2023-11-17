@@ -114,6 +114,7 @@ a {
 input[type=submit]:hover,
 p a:hover {
   background-color: #1282A2;
+  cursor: pointer;
 }
 
 input[type=text],
@@ -161,7 +162,6 @@ select {
 .spi {
   flex: 50%;
 }
-
 
 .topnav {
   height: 10vh;
@@ -259,16 +259,30 @@ img {
   align-items: center;
 }
 
-#loader {
+#loader{
   position: absolute;
   width: 100%;
-  height: 100%;
+  height: 150%;
   display: none;
   justify-content: center;
   align-items: center;
   background-color: #317b8d65;
 }
-
+#debuger{
+  position: absolute;
+  width: 100%;
+  height: 150%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background-color: #317b8d65;
+}
+.debuging{
+  position: relative;
+  width: 130px;
+  height: 130px;
+  z-index: 9999;  
+}
 .loading {
   position: relative;
   width: 130px;
@@ -290,21 +304,6 @@ img {
   100% {
     transform: rotate(360deg);
   }
-}
-
-/* The switch - the box around the slider */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 34px;
-}
-
-/* Hide default HTML checkbox */
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
 }
 
 /* The slider */
