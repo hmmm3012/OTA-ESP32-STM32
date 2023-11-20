@@ -10,7 +10,7 @@ void oled_system_info(const char* name,const char* ssid,const char* ip,const boo
 {
 	char buf[500] = "";
 	sh1106_display_clear(NULL);
-	sprintf(buf, "SSID:\n\t%s\nIP:\n%s\nMCU 1:\t\t%s\nMCU 2:\t\t%s\nNAME :\t\t\t%s",
+	sprintf(buf, "SSID:\n\t%s\nIP:\n%s\nMCU 1:\t\t%s\nMCU 2:\t\t%s\n%s",
 			ssid == NULL ? "Not connected" : ssid,
 			ip == NULL ? "Not connected" : ip,
 			state1 == 1 ? "RUN" : "OFF",
