@@ -229,8 +229,11 @@ bool Connect_New_Wifi(const char nssid[], const char npass[])
     };
     for (int i = 0; i < strlen(nssid); i++)
         wifi_sta_config.sta.ssid[i] = nssid[i];
-    for (int i = 0; i < strlen(npass); i++)
-        wifi_sta_config.sta.password[i] = npass[i];
+    if(strlen(npass) != 0)
+    {
+        for (int i = 0; i < strlen(npass); i++)
+           wifi_sta_config.sta.password[i] = npass[i];
+    }
 #if DEBUG
     ESP_LOGI(TAG_STA, "SSID : %s", wifi_sta_config.sta.ssid);
     ESP_LOGI(TAG_STA, "PASS : %s", wifi_sta_config.sta.password);

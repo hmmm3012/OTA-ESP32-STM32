@@ -9,7 +9,7 @@
 #define MODE_DEBUG 1
 #define MODE_CHANGE (1<<1)
 #define MODE_NOCHANGE (0<<1)
-#define CAR_NAME "BOSCH CAR 0"
+#define CAR_NAME "BOSCH CAR 3"
 typedef struct System_Data
 {
     /* Car's name*/
@@ -51,7 +51,7 @@ extern "C"
     size_t system_get_spi_used(System_DataTypedef *system_DATA);
     bool system_is_changed(System_DataTypedef *system_DATA);
     bool system_is_debug_mode(System_DataTypedef *system_DATA);
-    
+    void system_set_sys_change(System_DataTypedef *system_DATA);
     esp_err_t mount_storage(System_DataTypedef *Para_system_data);
     esp_err_t start_file_server(System_DataTypedef *Para_system_data);
 #ifdef __cplusplus

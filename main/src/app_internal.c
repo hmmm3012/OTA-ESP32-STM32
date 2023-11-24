@@ -19,13 +19,16 @@ void system_update_mcu_state(System_DataTypedef *system_DATA, bool state1, bool 
 }
 // Update state of system
 void system_set_sys_state(System_DataTypedef *system_DATA, uint8_t state){
-    uart_flush(UART_NUM_1);
     system_DATA->sys_state = state;
     if(system_is_debug_mode(system_DATA))
         uart_set_parity(UART_NUM_1, UART_PARITY_DISABLE);
     else
         uart_set_parity(UART_NUM_1, UART_PARITY_EVEN);
 
+}
+
+void system_set_sys_change(System_DataTypedef *system_DATA){
+    system_DATA->sys_state = system_DATA->sys_state | 0b10;
 }
 // Get state of system
 uint8_t system_get_sys_state(System_DataTypedef *system_DATA){

@@ -4,7 +4,7 @@
 
 
 /* AP Configuration */
-#define ESP_WIFI_AP_SSID "CE437_CAR8"
+#define ESP_WIFI_AP_SSID "CE437_CAR_3"
 #define ESP_WIFI_AP_PASSWD ""
 #define ESP_WIFI_CHANNEL 1
 #define MAX_STA_CONN 5
