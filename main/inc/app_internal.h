@@ -9,7 +9,7 @@
 #define MODE_DEBUG 1
 #define MODE_CHANGE (1<<1)
 #define MODE_NOCHANGE (0<<1)
-#define CAR_NAME "BOSCH CAR 3"
+#define CAR_NAME "CAR -1"
 typedef struct System_Data
 {
     /* Car's name*/
