@@ -19,10 +19,10 @@
 #include "lwip/sys.h"
 #include "wifi.h"
 #include "app_internal.h"
-
+#include "soc/soc.h"
 #if DEBUG
 #include "esp_log.h"
-static const char *TAG_AP = "WiFi SoftAP";
+    static const char *TAG_AP = "WiFi SoftAP";
 static const char *TAG_STA = "WiFi Sta";
 static const char *TAG_Scan = "WiFi Sta";
 #endif
@@ -184,7 +184,6 @@ void wifi_init(void)
                                            pdFALSE,
                                            10000 / portTICK_PERIOD_MS);
 
-
     /* Set sta as the default interface */
     esp_netif_set_default_netif(esp_ap_cfg);
 
@@ -229,10 +228,10 @@ bool Connect_New_Wifi(const char nssid[], const char npass[])
     };
     for (int i = 0; i < strlen(nssid); i++)
         wifi_sta_config.sta.ssid[i] = nssid[i];
-    if(strlen(npass) != 0)
+    if (strlen(npass) != 0)
     {
         for (int i = 0; i < strlen(npass); i++)
-           wifi_sta_config.sta.password[i] = npass[i];
+            wifi_sta_config.sta.password[i] = npass[i];
     }
 #if DEBUG
     ESP_LOGI(TAG_STA, "SSID : %s", wifi_sta_config.sta.ssid);

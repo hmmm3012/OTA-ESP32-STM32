@@ -7,13 +7,13 @@
 #define UART_RX_BUFFER_SIZE 1024
 #define MODE_BOOT 0
 #define MODE_DEBUG 1
-#define MODE_CHANGE (1<<1)
-#define MODE_NOCHANGE (0<<1)
-#define CAR_NAME "CAR 3"
+#define MODE_CHANGE (1 << 1)
+#define MODE_NOCHANGE (0 << 1)
+#define CAR_NAME "CAR 9"
 typedef struct System_Data
 {
     /* Car's name*/
-    const char* name;
+    const char *name;
     /* Current SSID */
     char ssid[32];
     /* Current IP*/
@@ -23,8 +23,8 @@ typedef struct System_Data
     /* Mcu state */
     bool mcu1_state, mcu2_state;
     /* Flag Oled */
-    // 1: Boot/Debug mode , 2: Changed 
-    uint8_t sys_state; 
+    // 1: Boot/Debug mode , 2: Changed
+    uint8_t sys_state;
     /* Base path of file storage */
     char base_path[ESP_VFS_PATH_MAX + 1];
     /* Scratch buffer for temporary storage during file transfer */
@@ -41,7 +41,7 @@ typedef struct System_Data
 extern "C"
 {
 #endif
-    System_DataTypedef* system_init();
+    System_DataTypedef *system_init();
     void system_update_mcu_state(System_DataTypedef *system_DATA, bool state1, bool state2);
     void system_set_sys_state(System_DataTypedef *system_DATA, uint8_t state);
     uint8_t system_get_sys_state(System_DataTypedef *system_DATA);

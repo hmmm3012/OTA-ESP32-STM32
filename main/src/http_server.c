@@ -164,13 +164,12 @@ esp_err_t start_file_server(System_DataTypedef *Para_system_data)
         .uri = "/scan",
         .method = HTTP_GET,
         .handler = scan_handler,
-        .user_ctx = NULL 
-    };
+        .user_ctx = NULL};
     httpd_uri_t cfgWifi_handle = {
         .uri = "/cfgwifi",
         .method = HTTP_POST,
         .handler = cfgWifi_handler,
-        .user_ctx = NULL, 
+        .user_ctx = NULL,
     };
     // Register URI handler
     httpd_register_uri_handler(server, &file_download);
@@ -453,7 +452,7 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
     }
     else if (!strcmp(para, "?reload"))
     {
-        system_set_sys_state(system_data_FS,MODE_CHANGE|MODE_BOOT);
+        system_set_sys_state(system_data_FS, MODE_CHANGE | MODE_BOOT);
         reload_json(req);
         return ESP_OK;
     }
@@ -490,7 +489,7 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
             ESP_LOGI(TAG, "Only RUN 2");
 #endif
         }
-        else if (strcmp(para,"?erase") && para[1] != 'd')
+        else if (strcmp(para, "?erase") && para[1] != 'd')
         {
             if (system_is_debug_mode(system_data_FS) == 1)
             {
@@ -499,13 +498,13 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
             }
             else
             {
-                if (strcmp(para, "?erase1")==0)
+                if (strcmp(para, "?erase1") == 0)
                 {
                     gpio_boot_mcu1();
                 }
                 else
                 {
-                    gpio_boot_mcu2();    
+                    gpio_boot_mcu2();
                 }
 #if DEBUG
                 if (initSTM32() == 1)
@@ -532,18 +531,25 @@ static esp_err_t ota_manager_handler(httpd_req_t *req)
                 }
             }
         }
-        
+
         // Debug mode
-        // else if (strcmp(para, "?debug"))
         else
         {
             system_set_sys_state(system_data_FS, MODE_DEBUG | MODE_CHANGE);
-            if(strcmp(para,"?debug1") == 0){
+            if (strcmp(para, "?debug1") == 0)
+            {
                 system_update_mcu_state(system_data_FS, 1, 0);
                 gpio_run_mcu1();
-            }else{
+            }
+            else if (strcmp(para, "?debug2") == 0)
+            {
                 system_update_mcu_state(system_data_FS, 0, 1);
                 gpio_run_mcu2();
+            }
+            else
+            {
+                system_update_mcu_state(system_data_FS, 1, 1);
+                gpio_run_both();
             }
             httpd_resp_sendstr(req, "DEBUG");
         }

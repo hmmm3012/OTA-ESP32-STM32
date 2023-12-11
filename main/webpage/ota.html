@@ -1,240 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>OTA</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="favicon.ico" type="image/x-icon" />
-    <link rel="stylesheet" type="text/css" href="style.css">
-  </head>
-  <body>
-    <div id="loader">
-      <div class="loading"></div>
+
+<head>
+  <title>OTA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div id="loader">
+    <div class="loading"></div>
+  </div>
+  <div id="debuger">
+    <p class="debuging"><a onclick="reload_ota()">Return</a></p>
+  </div>
+  <section class="topnav">
+    <div class="tabs-container">
+      <a class="tab" href="/">Wifi Config</a>
+      <a class="tab" href="/ota">Flash MCU</a>
+      <a class="tab" href="/about">About</a>
+      <span class="tab-slider slider-ota"></span>
     </div>
-    <div id="debuger">
-      <p class= "debuging"><a onclick="reload_ota()">Return</a></p>
-    </div>
-    <section class="topnav">
-      <div class="tabs-container">
-        <a class="tab" href="/">Wifi Config</a>
-        <a class="tab" href="/ota">Flash MCU</a>
-        <a class="tab" href="/about">About</a>
-        <span class="tab-slider slider-ota"></span>
+  </section>
+  <div class="content">
+    <div class="file card">
+      <div class="upload">
+        <p>Upload STM32 BinFile</p>
+        <input id="newfile" type="file"><input id="upload" onclick="upload()" type="submit" value="Upload" />
+        <p id="storage">SPIFFS Storage : </p>
+        <p id="used">Used : </p>
       </div>
-    </section>
-    <div class="content">
-      <div class="file card">
-        <div class="upload">
-          <p>Upload STM32 BinFile</p>
-          <input id="newfile" type="file"><input id="upload" onclick="upload()" type="submit" value="Upload" />
-          <p id="storage">SPIFFS Storage : </p>
-          <p id="used">Used : </p>
-        </div>
-        <div class="spi">
-          <p><a href="/list">List file</a></p>
-          <p><a onclick="runboth()">Run both</a></p>
-          <form id="file-form" action="ota" method="POST">
-            <label>File to download: </label>
-            <select id="files" name="files" required>
-            </select>
-          </form>
-          <p></p>
-        </div>
-      </div>
-      <div class="mcu card-grid">
-        <div class="card %STATE_MCU1%">
-          <p id="mcu1">1.First STM32 - </p>
-          <p><a onclick="run1()">Run</a></p>
-          <p><a onclick="download1()">Download</a></p>
-          <p><a onclick="erase1()">Erase</a></p>
-          <p><a onclick="debug1()">Debug</a></p>
-        </div>
-        <div class="card %STATE_MCU2%">
-          <p id="mcu2">2.Second STM32 - </p>
-          <p><a onclick="run2()">Run</a></p>
-          <p><a onclick="download2()">Download</a></p>
-          <p><a onclick="erase2()">Erase</a></p>
-          <p><a onclick="debug2()">Debug</a></p>
-        </div>
+      <div class="spi">
+        <p><a href="/list">List file</a></p>
+        <p><a onclick="runboth()">Run both</a></p>
+        <p><a onclick="debugboth()">Debug both</a></p>
+        <form id="file-form" action="ota" method="POST">
+          <label>File to download: </label>
+          <select id="files" name="files" required>
+          </select>
+        </form>
+        <p></p>
       </div>
     </div>
-  </body>
-  <script>
-    let load = document.getElementById("loader");
-    let debuger = document.getElementById("debuger");
-    let createXHTTP = (method,uri,cb_200,cb_404,cb_rd,file) => {
-      load.style.display = "flex";
-      let xhttp = new XMLHttpRequest();
-      xhttp.onreadystatechange = () => {
-        if (xhttp.readyState == 4) {
-          if (xhttp.status == 200) {
-            cb_200(xhttp.responseText);
-          } else {
-            cb_404(xhttp.responseText);
-          }      
-          cb_rd();
-        } 
+    <div class="mcu card-grid">
+      <div class="card %STATE_MCU1%">
+        <p id="mcu1">1.First STM32 - </p>
+        <p><a onclick="run1()">Run</a></p>
+        <p><a onclick="download1()">Download</a></p>
+        <p><a onclick="erase1()">Erase</a></p>
+        <p><a onclick="debug1()">Debug</a></p>
+      </div>
+      <div class="card %STATE_MCU2%">
+        <p id="mcu2">2.Second STM32 - </p>
+        <p><a onclick="run2()">Run</a></p>
+        <p><a onclick="download2()">Download</a></p>
+        <p><a onclick="erase2()">Erase</a></p>
+        <p><a onclick="debug2()">Debug</a></p>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+  let load = document.getElementById("loader");
+  let debuger = document.getElementById("debuger");
+  let createXHTTP = (method, uri, cb_200, cb_404, cb_rd, file) => {
+    load.style.display = "flex";
+    let xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = () => {
+      if (xhttp.readyState == 4) {
+        if (xhttp.status == 200) {
+          cb_200(xhttp.responseText);
+        } else {
+          cb_404(xhttp.responseText);
+        }
+        cb_rd();
       }
-      xhttp.open(method,uri,true);
-      xhttp.send(file);
     }
+    xhttp.open(method, uri, true);
+    xhttp.send(file);
+  }
 
-    download = (mcu) => {
-      var files = document.getElementById("files");
-      var selectedFile = files.options[files.options.selectedIndex].value;
-      createXHTTP("GET","/download" + mcu + "/" + selectedFile,(res) => {
-        if(res == "WRONG MODE"){
-          alert("Download failed, Change to debug mode");
-        }else{
-          alert("Download done");
-        }
-      },() => {
-        alert("Download failed, erase and try again !!!");
-      },() => {
-        load.style.display = "none";
-      });
-    }
-
-    runboth = () => {
-      createXHTTP("GET","/ota?runboth",(res) => {
-        updateMCUState("running", "running");
-      },() => {
-        alert("Run failed, erase and try again !!!");
-      },() => {
-        load.style.display = "none";
-      });
-    }
-
-    run = (mcu) => {
-      createXHTTP("GET","/ota?run" + mcu,(res) => {
-        if(mcu == 1)
-          updateMCUState("running", "off");
-        else
-          updateMCUState("off", "running");
-      },() => {
-        alert("Run failed, erase and try again !!!");
-      },() => {
-        load.style.display = "none";
-      });
-    }
-
-    erase = (mcu) => {
-      createXHTTP("GET","/ota?erase" + mcu,(res) => {
-        if(res == "WRONG MODE"){
-          alert("Erase failed, Change to debug mode");
-        }else{
-          alert("Erase done");
-        }
-      },() => {
-        alert("Erase failed, try again !!!");
-      },() => {
-        load.style.display = "none";
-      });
-    }
-    reload_ota = () => {
-      load.style.display = "flex";
-      debuger.style.display = "none";
-      createXHTTP("GET","/ota?reload",(res) => {
-        let obj = JSON.parse(res);
-        document.getElementById("storage").innerHTML = "SPIFFS Storage : " + obj.spistorage;
-        document.getElementById("used").innerHTML = "Used :" + obj.spiused;
-        updateMCUState(obj.state1, obj.state2);
-          const files = document.getElementById("files");
-          while (files.hasChildNodes()) {
-            files.removeChild(files.firstChild);
-          }
-          obj.files.forEach(element => {
-            if (element != "") {
-              let option = document.createElement("option");
-              option.innerHTML = element;
-              option.value = element;
-              document.getElementById("files").appendChild(option);
-            }
-          }); 
-      },(res) => {
-        alert("Reload failed, try again !!!");
-      },() => {
-        load.style.display = "none";
-      });
-    }
-
-    upload = () => {
-      var fileInput = document.getElementById("newfile").files;
-      if (fileInput.length != 0)
-        var filePath = fileInput[0].name;
-      var upload_path = "/upload/" + filePath;
-      /* Max size of an individual file. Make sure this
-      * value is same as that set in file_server.c */
-      let MAX_FILE_SIZE = 200 * 1024;
-      let MAX_FILE_SIZE_STR = "200KB";
-
-      if (fileInput.length == 0) {
-        alert("No file selected!");
-      } else if (filePath.indexOf(' ') >= 0) {
-        alert("File path on server cannot have spaces!");
-      } else if (filePath[filePath.length - 1] == '/') {
-        alert("File name not specified after path!");
-      } else if (fileInput[0].size > 200 * 1024) {
-        alert("File size must be less than 200KB!");
+  download = (mcu) => {
+    var files = document.getElementById("files");
+    var selectedFile = files.options[files.options.selectedIndex].value;
+    createXHTTP("GET", "/download" + mcu + "/" + selectedFile, (res) => {
+      if (res == "WRONG MODE") {
+        alert("Download failed, Change to debug mode");
       } else {
-        document.getElementsByTagName("html").disabled = true;
-        var file = fileInput[0];
-        createXHTTP( "POST",upload_path,(res) => {
-          alert("Upload done");
-        },() => {
-          alert(xhttp.status + " Error!\n" + xhttp.responseText);
-          location.reload()
-        },() => {
-          reload_ota();  
-        },file);
-      } 
-    }
-    updateMCUState = (state1, state2) => {
-      document.getElementById("mcu1").innerHTML = "1.First STM32 - " + state1;
-      document.getElementById("mcu2").innerHTML = "2.Second STM32 - " + state2;
-      document.getElementsByClassName("%STATE_MCU1%")[0].classList.forEach((e) => {
-        if (e != "card" && e != "%STATE_MCU1%")
-          document.getElementsByClassName("%STATE_MCU1%")[0].classList.remove(e);
-      })
-      document.getElementsByClassName("%STATE_MCU2%")[0].classList.forEach((e) => {
-        if (e != "card" && e != "%STATE_MCU2%")
-          document.getElementsByClassName("%STATE_MCU2%")[0].classList.remove(e);
-      })
-      document.getElementsByClassName("%STATE_MCU1%")[0].classList.add(state1);
-      document.getElementsByClassName("%STATE_MCU2%")[0].classList.add(state2);
-    }
-    debug = (mcu) =>{
-      createXHTTP("GET","/ota?debug"+mcu,(res) => {
-      },(res) => {
-        alert("Debug failed, try again !!!");
-      },() => {
-        load.style.display = "none";
-        debuger.style.display = "flex";
+        alert("Download done");
+      }
+    }, () => {
+      alert("Download failed, erase and try again !!!");
+    }, () => {
+      load.style.display = "none";
+    });
+  }
+
+  runboth = () => {
+    createXHTTP("GET", "/ota?runboth", (res) => {
+      updateMCUState("running", "running");
+    }, () => {
+      alert("Run failed, erase and try again !!!");
+    }, () => {
+      load.style.display = "none";
+    });
+  }
+
+  run = (mcu) => {
+    createXHTTP("GET", "/ota?run" + mcu, (res) => {
+      if (mcu == 1)
+        updateMCUState("running", "off");
+      else
+        updateMCUState("off", "running");
+    }, () => {
+      alert("Run failed, erase and try again !!!");
+    }, () => {
+      load.style.display = "none";
+    });
+  }
+
+  erase = (mcu) => {
+    createXHTTP("GET", "/ota?erase" + mcu, (res) => {
+      if (res == "WRONG MODE") {
+        alert("Erase failed, Change to debug mode");
+      } else {
+        alert("Erase done");
+      }
+    }, () => {
+      alert("Erase failed, try again !!!");
+    }, () => {
+      load.style.display = "none";
+    });
+  }
+
+
+  reload_ota = () => {
+    load.style.display = "flex";
+    debuger.style.display = "none";
+    createXHTTP("GET", "/ota?reload", (res) => {
+      let obj = JSON.parse(res);
+      document.getElementById("storage").innerHTML = "SPIFFS Storage : " + obj.spistorage;
+      document.getElementById("used").innerHTML = "Used :" + obj.spiused;
+      updateMCUState(obj.state1, obj.state2);
+      const files = document.getElementById("files");
+      while (files.hasChildNodes()) {
+        files.removeChild(files.firstChild);
+      }
+      obj.files.forEach(element => {
+        if (element != "") {
+          let option = document.createElement("option");
+          option.innerHTML = element;
+          option.value = element;
+          document.getElementById("files").appendChild(option);
+        }
       });
+    }, (res) => {
+      alert("Reload failed, try again !!!");
+    }, () => {
+      load.style.display = "none";
+    });
+  }
+
+  upload = () => {
+    var fileInput = document.getElementById("newfile").files;
+    if (fileInput.length != 0)
+      var filePath = fileInput[0].name;
+    var upload_path = "/upload/" + filePath;
+    /* Max size of an individual file. Make sure this
+    * value is same as that set in file_server.c */
+    let MAX_FILE_SIZE = 200 * 1024;
+    let MAX_FILE_SIZE_STR = "200KB";
+
+    if (fileInput.length == 0) {
+      alert("No file selected!");
+    } else if (filePath.indexOf(' ') >= 0) {
+      alert("File path on server cannot have spaces!");
+    } else if (filePath[filePath.length - 1] == '/') {
+      alert("File name not specified after path!");
+    } else if (fileInput[0].size > 200 * 1024) {
+      alert("File size must be less than 200KB!");
+    } else {
+      document.getElementsByTagName("html").disabled = true;
+      var file = fileInput[0];
+      createXHTTP("POST", upload_path, (res) => {
+        alert("Upload done");
+      }, () => {
+        alert(xhttp.status + " Error!\n" + xhttp.responseText);
+        location.reload()
+      }, () => {
+        reload_ota();
+      }, file);
     }
-    erase1 = () => {
-      erase(1);
-    }
-    erase2 = () => {
-      erase(2);
-    }
-    run1 = () => {
-      run(1);
-    }
-    run2 = () => {
-      run(2);
-    }
-    download1 = () => {
-      download(1);
-    }
-    download2 = () => {
-      download(2);
-    }
-    debug1 = ()=>{
-      debug(1);
-    }
-    debug2 = ()=>{
-      debug(2);
-    }
-    reload_ota(); 
-  </script>
+  }
+  updateMCUState = (state1, state2) => {
+    document.getElementById("mcu1").innerHTML = "1.First STM32 - " + state1;
+    document.getElementById("mcu2").innerHTML = "2.Second STM32 - " + state2;
+    document.getElementsByClassName("%STATE_MCU1%")[0].classList.forEach((e) => {
+      if (e != "card" && e != "%STATE_MCU1%")
+        document.getElementsByClassName("%STATE_MCU1%")[0].classList.remove(e);
+    })
+    document.getElementsByClassName("%STATE_MCU2%")[0].classList.forEach((e) => {
+      if (e != "card" && e != "%STATE_MCU2%")
+        document.getElementsByClassName("%STATE_MCU2%")[0].classList.remove(e);
+    })
+    document.getElementsByClassName("%STATE_MCU1%")[0].classList.add(state1);
+    document.getElementsByClassName("%STATE_MCU2%")[0].classList.add(state2);
+  }
+  debug = (mcu) => {
+    createXHTTP("GET", "/ota?debug" + mcu, (res) => {
+    }, (res) => {
+      alert("Debug failed, try again !!!");
+    }, () => {
+      load.style.display = "none";
+      debuger.style.display = "flex";
+    });
+  }
+  debugboth = () => {
+    createXHTTP("GET", "/ota?debugboth", (res) => {
+    }, () => {
+      alert("Debug failed, try again !!!");
+    }, () => {
+      load.style.display = "none";
+      debuger.style.display = "flex";
+    });
+  }
+
+  erase1 = () => {
+    erase(1);
+  }
+  erase2 = () => {
+    erase(2);
+  }
+  run1 = () => {
+    run(1);
+  }
+  run2 = () => {
+    run(2);
+  }
+  download1 = () => {
+    download(1);
+  }
+  download2 = () => {
+    download(2);
+  }
+  debug1 = () => {
+    debug(1);
+  }
+  debug2 = () => {
+    debug(2);
+  }
+  reload_ota(); 
+</script>
+
 </html>

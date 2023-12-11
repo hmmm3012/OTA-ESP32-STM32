@@ -25,7 +25,7 @@
 #define UART_PAD (1ULL << TX_PAD | 1ULL << RX_PAD)
 
 static const char *TAG = "GPIO";
-System_DataTypedef* system_DATA_GPIO;
+System_DataTypedef *system_DATA_GPIO;
 
 static IRAM_ATTR void BTN1_handler()
 {
@@ -39,7 +39,7 @@ static IRAM_ATTR void BTN2_handler()
 }
 void gpio_init(void *PARA_system_DATA)
 {
-    system_DATA_GPIO = (System_DataTypedef *) PARA_system_DATA;
+    system_DATA_GPIO = (System_DataTypedef *)PARA_system_DATA;
     // Configure GPIO for OTA
     gpio_config_t OTA_conf = {};
     OTA_conf.mode = GPIO_MODE_OUTPUT;

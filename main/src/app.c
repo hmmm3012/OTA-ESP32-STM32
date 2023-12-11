@@ -29,16 +29,16 @@ static void print_Screen(void *pvParameters)
             // system info screen
             if (!system_is_debug_mode(system_DATA))
             {
-                oled_system_info(system_DATA->name,system_DATA->ssid, system_DATA->ip, system_DATA->mcu1_state, system_DATA->mcu2_state);
-                system_set_sys_state(system_DATA, MODE_NOCHANGE|MODE_BOOT);
+                oled_system_info(system_DATA->name, system_DATA->ssid, system_DATA->ip, system_DATA->mcu1_state, system_DATA->mcu2_state);
+                system_set_sys_state(system_DATA, MODE_NOCHANGE | MODE_BOOT);
             }
             // debug UART and CAN screen
-            else 
+            else
             {
                 oled_debug(system_DATA->CAN1_Data, system_DATA->uart_buffer);
                 memset(system_DATA->CAN1_Data, 0, sizeof(uint8_t) * 8);
                 memset(system_DATA->uart_buffer, 0, sizeof(uint8_t) * UART_RX_BUFFER_SIZE);
-                system_set_sys_state(system_DATA, MODE_NOCHANGE|MODE_DEBUG);
+                system_set_sys_state(system_DATA, MODE_NOCHANGE | MODE_DEBUG);
             }
         }
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -62,5 +62,5 @@ void app_main(void)
     ESP_ERROR_CHECK(start_file_server(system_DATA));
     /*Init and start CAN bus*/
     can_init(system_DATA);
-    xTaskCreate(print_Screen, "print_Screen", 1024*3, NULL, 15, NULL);
+    xTaskCreate(print_Screen, "print_Screen", 1024 * 3, NULL, 15, NULL);
 }
