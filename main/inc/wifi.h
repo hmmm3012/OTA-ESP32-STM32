@@ -3,7 +3,7 @@
 #define DEFAULT_SCAN_LIST_SIZE 5
 
 /* AP Configuration */
-#define ESP_WIFI_AP_SSID "CAR 9"
+#define ESP_WIFI_AP_SSID "CAR 2"
 #define ESP_WIFI_AP_PASSWD ""
 #define ESP_WIFI_CHANNEL 1
 #define MAX_STA_CONN 5

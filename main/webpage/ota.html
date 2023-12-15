@@ -45,14 +45,14 @@
     </div>
     <div class="mcu card-grid">
       <div class="card %STATE_MCU1%">
-        <p id="mcu1">1.First STM32 - </p>
+        <p id="mcu1">1.Actuator node - </p>
         <p><a onclick="run1()">Run</a></p>
         <p><a onclick="download1()">Download</a></p>
         <p><a onclick="erase1()">Erase</a></p>
         <p><a onclick="debug1()">Debug</a></p>
       </div>
       <div class="card %STATE_MCU2%">
-        <p id="mcu2">2.Second STM32 - </p>
+        <p id="mcu2">2.Sensor node - </p>
         <p><a onclick="run2()">Run</a></p>
         <p><a onclick="download2()">Download</a></p>
         <p><a onclick="erase2()">Erase</a></p>
@@ -194,8 +194,8 @@
     }
   }
   updateMCUState = (state1, state2) => {
-    document.getElementById("mcu1").innerHTML = "1.First STM32 - " + state1;
-    document.getElementById("mcu2").innerHTML = "2.Second STM32 - " + state2;
+    document.getElementById("mcu1").innerHTML = "1.Actuator node - " + state1;
+    document.getElementById("mcu2").innerHTML = "2.Sensor node - " + state2;
     document.getElementsByClassName("%STATE_MCU1%")[0].classList.forEach((e) => {
       if (e != "card" && e != "%STATE_MCU1%")
         document.getElementsByClassName("%STATE_MCU1%")[0].classList.remove(e);
